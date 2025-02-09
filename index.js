@@ -70,20 +70,6 @@
         checkDuration();
     }
 
-    // Function to handle manual scroll clicks
-    function handleManualScroll(event) {
-        if (!autoScrollActive) return;
-
-        // const leftButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-prev-button');
-        // const rightButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-next-button');
-
-        // if (event.target === leftButton || event.target === rightButton) {
-        //     console.log("[Auto Scroll] Manual scroll detected. Resetting...");
-            clearTimeout(scrollTimeout); // Clear existing timeout
-            setTimeout(detectMedia, 1000); // Detect new media after the manual click
-        // }
-    }
-
     // Function to stop auto-scrolling
     function stopAutoScroll() {
         autoScrollActive = false;
@@ -100,9 +86,31 @@
             detectMedia();
         }
     }
+    
+//    document.addEventListener("click", function () {
+//     const switcherLeft = document.querySelector(".media-viewer-switcher-left");
+//     const switcherRight = document.querySelector(".media-viewer-switcher-right");
+//     if (switcherLeft) {
+//         switcherLeft.addEventListener("click", function () {
+//             console.log("[Manual Click] Resetting auto-scroll and fetching current media...");
+//             clearTimeout(scrollTimeout); // Clear existing timeout
+//             setTimeout(detectMedia, 1000); // Detect new media after the manual click
+//         });
+//     }
+// }, true);
 
-    // Attach event listener for manual scroll clicks
-    document.addEventListener("click", handleManualScroll, true);
+document.addEventListener("click", function (event) {
+    const switcherLeft = document.querySelector(".media-viewer-switcher-left");
+    const switcherRight = document.querySelector(".media-viewer-switcher-right");
+
+    if (switcherLeft && switcherRight) {
+        if (event.target.closest(".media-viewer-switcher-left") || event.target.closest(".media-viewer-switcher-right")) {
+            console.log("[Manual Click] Resetting auto-scroll and fetching current media...");
+            clearTimeout(scrollTimeout); // Clear existing timeout
+            setTimeout(detectMedia, 1000); // Detect new media after the manual click
+        }
+    }
+}, true);
 
     // Expose functions to window for manual control
     window.startAutoScroll = startAutoScroll;
