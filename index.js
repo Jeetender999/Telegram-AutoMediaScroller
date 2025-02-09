@@ -74,14 +74,14 @@
     function handleManualScroll(event) {
         if (!autoScrollActive) return;
 
-        const leftButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-prev-button');
-        const rightButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-next-button');
+        // const leftButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-prev-button');
+        // const rightButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-next-button');
 
-        if (event.target === leftButton || event.target === rightButton) {
-            console.log("[Auto Scroll] Manual scroll detected. Resetting...");
+        // if (event.target === leftButton || event.target === rightButton) {
+        //     console.log("[Auto Scroll] Manual scroll detected. Resetting...");
             clearTimeout(scrollTimeout); // Clear existing timeout
             setTimeout(detectMedia, 1000); // Detect new media after the manual click
-        }
+        // }
     }
 
     // Function to stop auto-scrolling
