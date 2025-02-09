@@ -1,21 +1,29 @@
 (function() {
     'use strict';
 
-    let autoScrollActive = true; // Flag to enable/disable auto-scrolling
+    let autoScrollActive = false; // Flag to enable/disable auto-scrolling
+    let scrollDirection = "left"; // Default scroll direction
 
-    // Function to simulate clicking the left swipe button
-    function scrollLeft() {
-        if (!autoScrollActive) return; 
+    // Function to simulate clicking the left or right swipe button
+    function scrollMedia() {
+        if (!autoScrollActive) return;
 
         const leftButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-prev-button');
-        if (leftButton) {
+        const rightButton = document.querySelector('.tgico.media-viewer-sibling-button.media-viewer-next-button');
+
+        if (scrollDirection === "left" && leftButton) {
             leftButton.click();
-            console.log("[Auto Scroll] Scrolled to previous media...");
-            setTimeout(detectMedia, 1000); // Allow DOM to update before detecting new media
+            console.log("[Auto Scroll] Scrolled left...");
+        } else if (scrollDirection === "right" && rightButton) {
+            rightButton.click();
+            console.log("[Auto Scroll] Scrolled right...");
         } else {
-            console.log("[Auto Scroll] Left scroll button not found! Stopping auto-scroll.");
+            console.log("[Auto Scroll] Scroll button not found! Stopping auto-scroll.");
             stopAutoScroll();
+            return;
         }
+
+        setTimeout(detectMedia, 1000); // Wait for DOM update before detecting new media
     }
 
     // Function to detect media and decide timing
@@ -31,14 +39,14 @@
 
         if (imageElement) {
             console.log("[Auto Scroll] Image detected. Scrolling in 5 seconds...");
-            setTimeout(scrollLeft, 5000);
+            setTimeout(scrollMedia, 5000);
         } 
         else if (videoElement) {
             waitForVideoDuration(videoElement);
         } 
         else {
             console.log("[Auto Scroll] No media detected. Scrolling in 10 seconds...");
-            setTimeout(scrollLeft, 10000);
+            setTimeout(scrollMedia, 10000);
         }
     }
 
@@ -51,7 +59,7 @@
             if (videoDuration && !isNaN(videoDuration)) {
                 const scrollTime = videoDuration * 1000;
                 console.log(`[Auto Scroll] Video Duration: ${videoDuration.toFixed(2)} seconds. Scrolling in ${scrollTime / 1000} seconds...`);
-                setTimeout(scrollLeft, scrollTime);
+                setTimeout(scrollMedia, scrollTime);
             } else {
                 setTimeout(checkDuration, 500); // Retry every 500ms until duration is available
             }
@@ -67,10 +75,11 @@
     }
 
     // Function to restart auto-scrolling
-    function startAutoScroll() {
+    function startAutoScroll(direction = "left") {
         if (!autoScrollActive) {
             autoScrollActive = true;
-            console.log("[Auto Scroll] Restarted.");
+            scrollDirection = direction;
+            console.log(`[Auto Scroll] Started in "${scrollDirection}" direction.`);
             detectMedia();
         }
     }
@@ -79,6 +88,5 @@
     window.startAutoScroll = startAutoScroll;
     window.stopAutoScroll = stopAutoScroll;
 
-    // Start auto-scrolling when the script is loaded
-    detectMedia();
+    console.log("[Auto Scroll] Script loaded. Use startAutoScroll('left') or startAutoScroll('right') to begin.");
 })();
