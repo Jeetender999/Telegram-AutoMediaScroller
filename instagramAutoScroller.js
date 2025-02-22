@@ -35,41 +35,63 @@
         }
     }
 
-    // Find all <article> elements inside the main container
-    const articles = mainContainer.querySelectorAll('article');
-    console.log("Total Articles (Posts) Found:", articles.length);
+    // Array to store all discovered articles
+    let articles = Array.from(mainContainer.querySelectorAll('article'));
+    console.log("Initial Articles Found:", articles.length);
 
-    for (let index = 0; index < articles.length; index++) {
-        const article = articles[index];
+    // MutationObserver to detect new articles being added
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeName === "ARTICLE" && !articles.includes(node)) {
+                    articles.push(node); // Append new articles to our array
+                    console.log("New post detected. Total articles:", articles.length);
+                }
+            });
+        });
+    });
+
+    // Start observing the main container for new posts
+    observer.observe(mainContainer, { childList: true, subtree: true });
+
+    // Start scrolling through posts
+    let currentIndex = 0;
+
+    while (true) {
+        if (currentIndex >= articles.length) {
+            console.log("Waiting for new posts to load...");
+            await delay(2000); // Wait for new posts
+            continue;
+        }
+
+        const article = articles[currentIndex];
         const video = article.querySelector('video.x1lliihq.x5yr21d.xh8yej3');
         const image = article.querySelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
-        
+
         let mediaElement = video || image;
-        if (!mediaElement) continue;
+        if (!mediaElement) {
+            currentIndex++;
+            continue;
+        }
 
         let waitTime = 3000; // Default wait time for images
 
         if (video) {
-            // Wait for video metadata to load before getting duration
             if (video.readyState >= 2) {
                 waitTime = video.duration ? video.duration * 1000 : 5000;
             } else {
-                await new Promise(resolve => {
-                    video.addEventListener("loadedmetadata", () => {
-                        waitTime = video.duration ? video.duration * 1000 : 5000;
-                        resolve();
-                    }, { once: true });
-                });
+                video.addEventListener("loadedmetadata", () => {
+                    waitTime = video.duration ? video.duration * 1000 : 5000;
+                }, { once: true });
             }
         }
 
-        // Scroll the media (video or image) into perfect view
+        // Scroll into view
         await scrollToMedia(mediaElement);
-        console.log(`Viewing Post ${index + 1}: ${video ? "Video" : "Image"} - Waiting ${waitTime / 1000} seconds`);
+        console.log(`Viewing Post ${currentIndex + 1}: ${video ? "Video" : "Image"} - Waiting ${waitTime / 1000} seconds`);
 
         // Wait before moving to the next post
         await delay(waitTime);
+        currentIndex++;
     }
-
-    console.log("Auto-scroll completed!");
 })();
