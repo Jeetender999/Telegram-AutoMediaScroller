@@ -21,15 +21,34 @@
         );
     }
 
+    // Function to get the most visible article
+    function getCurrentVisibleArticle() {
+        let visibleArticle = null;
+        let maxVisibility = 0;
+
+        articles.forEach(article => {
+            const rect = article.getBoundingClientRect();
+            const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+            const visibilityRatio = visibleHeight / rect.height;
+
+            if (visibilityRatio > maxVisibility && visibilityRatio > 0.5) { // At least 50% visible
+                maxVisibility = visibilityRatio;
+                visibleArticle = article;
+            }
+        });
+
+        return visibleArticle;
+    }
+
     // Function to scroll the media into perfect view
     async function scrollToMedia(mediaElement) {
         if (mediaElement) {
             mediaElement.scrollIntoView({ behavior: "smooth", block: "center" });
 
             // Keep checking until the element is actually in view
-            for (let i = 0; i < 10; i++) { // Retry up to 10 times
+            for (let i = 0; i < 10; i++) {
                 if (isFullyVisible(mediaElement)) break;
-                await delay(300); // Wait 300ms and try again
+                await delay(300);
                 mediaElement.scrollIntoView({ behavior: "smooth", block: "center" });
             }
         }
@@ -38,29 +57,55 @@
     // Array to store all discovered articles
     let articles = Array.from(mainContainer.querySelectorAll('article'));
     console.log("Initial Articles Found:", articles.length);
+    let currentIndex = 0;
 
     // MutationObserver to detect new articles being added
     const observer = new MutationObserver(mutations => {
+        let newArticles = [];
+
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
                 if (node.nodeName === "ARTICLE" && !articles.includes(node)) {
-                    articles.push(node); // Append new articles to our array
-                    console.log("New post detected. Total articles:", articles.length);
+                    newArticles.push(node);
                 }
             });
         });
+
+        if (newArticles.length > 0) {
+            articles.push(...newArticles);
+            console.log("New posts detected. Total articles:", articles.length);
+        }
+
+        // Find the most visible article
+        const visibleArticle = getCurrentVisibleArticle();
+
+        // Check if user has manually scrolled (visible post is different from our current post)
+        if (visibleArticle && visibleArticle !== articles[currentIndex]) {
+            const newIndex = articles.indexOf(visibleArticle);
+            if (newIndex !== -1) {
+                currentIndex = newIndex;
+
+                // Determine the post type and wait time
+                const video = visibleArticle.querySelector('video.x1lliihq.x5yr21d.xh8yej3');
+                const image = visibleArticle.querySelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
+                let mediaType = video ? "Video" : "Image";
+                let waitTime = video ? (video.duration ? video.duration * 1000 : 5000) : 3000;
+
+                console.log(`Manual scroll detected! Resetting index to ${currentIndex + 1}.`);
+                console.log(`Current post type: ${mediaType}, Duration: ${waitTime / 1000} sec`);
+            }
+        }
     });
 
     // Start observing the main container for new posts
     observer.observe(mainContainer, { childList: true, subtree: true });
 
-    // Start scrolling through posts
-    let currentIndex = 0;
-
     while (true) {
+        
+
         if (currentIndex >= articles.length) {
             console.log("Waiting for new posts to load...");
-            await delay(2000); // Wait for new posts
+            await delay(2000);
             continue;
         }
 
@@ -74,24 +119,16 @@
             continue;
         }
 
-        let waitTime = 3000; // Default wait time for images
+        let waitTime = video ? (video.duration ? video.duration * 1000 : 5000) : 3000;
+        let mediaType = video ? "Video" : "Image";
 
-        if (video) {
-            if (video.readyState >= 2) {
-                waitTime = video.duration ? video.duration * 1000 : 5000;
-            } else {
-                video.addEventListener("loadedmetadata", () => {
-                    waitTime = video.duration ? video.duration * 1000 : 5000;
-                }, { once: true });
-            }
-        }
+        // Log debugging information
+        console.log(`Viewing Post ${currentIndex + 1}: ${mediaType} - Waiting ${waitTime / 1000} seconds`);
 
-        // Scroll into view
+        // Scroll to the media and wait
         await scrollToMedia(mediaElement);
-        console.log(`Viewing Post ${currentIndex + 1}: ${video ? "Video" : "Image"} - Waiting ${waitTime / 1000} seconds`);
-
-        // Wait before moving to the next post
         await delay(waitTime);
+
         currentIndex++;
     }
 })();
