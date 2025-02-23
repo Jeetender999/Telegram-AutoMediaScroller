@@ -58,6 +58,7 @@
     let articles = Array.from(mainContainer.querySelectorAll('article'));
     console.log("Initial Articles Found:", articles.length);
     let currentIndex = 0;
+    let scrollTimeout = null;  // Store timeout ID
 
     // MutationObserver to detect new articles being added
     const observer = new MutationObserver(mutations => {
@@ -89,8 +90,21 @@
                 const video = visibleArticle.querySelector('video.x1lliihq.x5yr21d.xh8yej3');
                 const image = visibleArticle.querySelector('img.x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3');
                 let mediaType = video ? "Video" : "Image";
-                let waitTime = video ? (video.duration ? video.duration * 1000 : 5000) : 3000;
 
+                let waitTime = 3000; // Default wait time for images
+        
+                if (video) {
+                    if (video.readyState >= 2) {
+                        waitTime = video.duration ? video.duration * 1000 : 5000;
+                    } else {
+                        video.addEventListener("loadedmetadata", () => {
+                            waitTime = video.duration ? video.duration * 1000 : 5000;
+                        }, { once: true });
+                    }
+                }
+        
+                if (scrollTimeout) clearTimeout(scrollTimeout);
+                console.log(scrollTimeout)
                 console.log(`Manual scroll detected! Resetting index to ${currentIndex + 1}.`);
                 console.log(`Current post type: ${mediaType}, Duration: ${waitTime / 1000} sec`);
             }
@@ -119,16 +133,31 @@
             continue;
         }
 
-        let waitTime = video ? (video.duration ? video.duration * 1000 : 5000) : 3000;
+       
         let mediaType = video ? "Video" : "Image";
+
+        let waitTime = 3000; // Default wait time for images
+
+        if (video) {
+            if (video.readyState >= 2) {
+                waitTime = video.duration ? video.duration * 1000 : 5000;
+            } else {
+                video.addEventListener("loadedmetadata", () => {
+                    waitTime = video.duration ? video.duration * 1000 : 5000;
+                }, { once: true });
+            }
+        }
 
         // Log debugging information
         console.log(`Viewing Post ${currentIndex + 1}: ${mediaType} - Waiting ${waitTime / 1000} seconds`);
 
         // Scroll to the media and wait
         await scrollToMedia(mediaElement);
-        await delay(waitTime);
+        scrollTimeout = await delay(waitTime);
 
         currentIndex++;
     }
 })();
+
+/// Fixed by Claude 
+
